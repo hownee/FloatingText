@@ -118,6 +118,13 @@ class FloatingTextApp: NSObject, NSApplicationDelegate {
             // Check for Ctrl+Option modifier
             let hasCtrlOption = flags.contains(.maskControl) && flags.contains(.maskAlternate)
 
+            // Check if no significant modifiers are pressed (for remote support)
+            // Allow shift as some remotes send it, but not cmd/ctrl/option
+            let hasNoModifiers = !flags.contains(.maskCommand) &&
+                                 !flags.contains(.maskControl) &&
+                                 !flags.contains(.maskAlternate)
+
+            // Ctrl+Option shortcuts (manual keyboard control)
             if hasCtrlOption {
                 // Right arrow (keycode 124) - Next
                 if keyCode == 124 {
@@ -142,6 +149,27 @@ class FloatingTextApp: NSObject, NSApplicationDelegate {
                 }
             }
 
+            // Presentation remote support (no modifiers required)
+            // These keys are commonly sent by presentation clickers:
+            // - Page Down (121), Page Up (116)
+            // - F5 often starts presentation, but we ignore it
+            if hasNoModifiers {
+                // Page Down (keycode 121) - Next
+                if keyCode == 121 {
+                    DispatchQueue.main.async {
+                        app.nextText()
+                    }
+                    return nil
+                }
+                // Page Up (keycode 116) - Previous
+                else if keyCode == 116 {
+                    DispatchQueue.main.async {
+                        app.previousText()
+                    }
+                    return nil
+                }
+            }
+
             return Unmanaged.passUnretained(event)
         }
 
@@ -159,11 +187,25 @@ class FloatingTextApp: NSObject, NSApplicationDelegate {
 
             // Fallback: use local monitor (works when app is frontmost)
             NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                // Ctrl+Option shortcuts
                 if event.modifierFlags.contains([.control, .option]) {
                     if event.keyCode == 124 {
                         self?.nextText()
                         return nil
                     } else if event.keyCode == 123 {
+                        self?.previousText()
+                        return nil
+                    }
+                }
+                // Remote/Page keys (no modifiers)
+                let hasNoMods = !event.modifierFlags.contains(.command) &&
+                                !event.modifierFlags.contains(.control) &&
+                                !event.modifierFlags.contains(.option)
+                if hasNoMods {
+                    if event.keyCode == 121 { // Page Down
+                        self?.nextText()
+                        return nil
+                    } else if event.keyCode == 116 { // Page Up
                         self?.previousText()
                         return nil
                     }

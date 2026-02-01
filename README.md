@@ -9,6 +9,7 @@ A minimal macOS app that displays floating text on your screen, always visible a
 - Click-through - doesn't intercept mouse events
 - Visible on all Spaces/desktops
 - Global keyboard shortcuts work even when app isn't focused
+- **Presentation remote support** (Logitech, Kensington, etc.)
 - Hidden from Dock
 
 ## Requirements
@@ -47,6 +48,17 @@ Or manually:
 | `Ctrl+Option+→` | Next text |
 | `Ctrl+Option+←` | Previous text |
 | `Ctrl+Option+Q` | Quit |
+
+## Presentation Remote Support
+
+Works out-of-the-box with most presentation clickers (Logitech Spotlight, Kensington, etc.):
+
+| Button | Action |
+|--------|--------|
+| Next / Page Down | Next text |
+| Previous / Page Up | Previous text |
+
+Most remotes emulate `Page Down` / `Page Up` keys which are automatically detected.
 
 ## Accessibility Permissions
 
