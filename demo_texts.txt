@@ -1,0 +1,7 @@
+Welcome to FloatingText
+Press Ctrl+Option+Right for next
+Press Ctrl+Option+Left for previous
+This text floats above everything!
+Perfect for presentations
+Or quick reminders
+The end - wrap around to start
