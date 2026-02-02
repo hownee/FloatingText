@@ -1,9 +1,53 @@
 import Cocoa
 import Carbon.HIToolbox
 
+class OutlinedTextView: NSView {
+    var text: String = "" {
+        didSet { needsDisplay = true }
+    }
+    var font: NSFont = NSFont(name: "Impact", size: 42) ?? NSFont.systemFont(ofSize: 42, weight: .bold)
+    var textColor: NSColor = .white
+    var outlineColor: NSColor = .black
+    var outlineWidth: CGFloat = 2.0
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        paragraphStyle.lineBreakMode = .byWordWrapping
+
+        // Draw outline by drawing text with stroke
+        let outlineAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: outlineColor,
+            .strokeColor: outlineColor,
+            .strokeWidth: outlineWidth,
+            .paragraphStyle: paragraphStyle
+        ]
+
+        // Draw fill on top
+        let fillAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor,
+            .paragraphStyle: paragraphStyle
+        ]
+
+        let attributedString = NSAttributedString(string: text, attributes: outlineAttributes)
+        let size = attributedString.boundingRect(with: bounds.size, options: [.usesLineFragmentOrigin, .usesFontLeading])
+        let y = (bounds.height - size.height) / 2
+
+        let drawRect = NSRect(x: 0, y: y, width: bounds.width, height: size.height)
+
+        // Draw outline first, then fill on top
+        NSAttributedString(string: text, attributes: outlineAttributes).draw(in: drawRect)
+        NSAttributedString(string: text, attributes: fillAttributes).draw(in: drawRect)
+    }
+}
+
 class FloatingTextApp: NSObject, NSApplicationDelegate {
     var window: NSWindow!
-    var textField: NSTextField!
+    var textView: OutlinedTextView!
     var texts: [String] = []
     var currentIndex: Int = 0
     var eventTap: CFMachPort?
@@ -70,27 +114,22 @@ class FloatingTextApp: NSObject, NSApplicationDelegate {
         window.ignoresMouseEvents = true  // Click-through
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
 
-        // Create the text field
-        textField = NSTextField(frame: window.contentView!.bounds)
-        textField.isEditable = false
-        textField.isSelectable = false
-        textField.isBordered = false
-        textField.backgroundColor = .clear
-        textField.textColor = .white
-        textField.font = NSFont.systemFont(ofSize: 42, weight: .bold)
-        textField.alignment = .center
-        textField.lineBreakMode = .byWordWrapping
-        textField.maximumNumberOfLines = 3
+        // Create the outlined text view
+        textView = OutlinedTextView(frame: window.contentView!.bounds)
+        textView.textColor = .white
+        textView.outlineColor = .black
+        textView.outlineWidth = 3.0
+        textView.font = NSFont(name: "Impact", size: 42) ?? NSFont.systemFont(ofSize: 42, weight: .bold)
 
-        // Add shadow to text for readability
+        // Add shadow for extra depth
         let shadow = NSShadow()
         shadow.shadowColor = NSColor.black.withAlphaComponent(0.8)
         shadow.shadowOffset = NSSize(width: 2, height: -2)
         shadow.shadowBlurRadius = 4
-        textField.shadow = shadow
+        textView.shadow = shadow
 
-        textField.autoresizingMask = [.width, .height]
-        window.contentView?.addSubview(textField)
+        textView.autoresizingMask = [.width, .height]
+        window.contentView?.addSubview(textView)
 
         window.orderFrontRegardless()
     }
@@ -233,13 +272,13 @@ class FloatingTextApp: NSObject, NSApplicationDelegate {
     }
 
     func updateText() {
-        textField.stringValue = texts[currentIndex]
+        textView.text = texts[currentIndex]
 
         // Animate the change
-        textField.alphaValue = 0.3
+        textView.alphaValue = 0.3
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.15
-            textField.animator().alphaValue = 1.0
+            textView.animator().alphaValue = 1.0
         }
     }
 
